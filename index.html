@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>資産取り崩しシミュレーション</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      .container {
+        max-width: 500px;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+      }
+      input,
+      button,
+      select {
+        margin-top: 10px;
+        width: 100%;
+        padding: 8px;
+      }
+      .input-group {
+        text-align: left;
+        margin-bottom: 10px;
+      }
+      .input-group label {
+        display: block;
+        font-weight: bold;
+      }
+      .asset-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .asset-group input {
+        flex: 1;
+      }
+    </style>
+    <script defer>
+      function addAsset(name = "", currentAmount = "", baseAmount = "") {
+        let assetContainer = document.getElementById("assets");
+        let div = document.createElement("div");
+        div.classList.add("asset-group");
+        div.innerHTML = `
+          <input type="text" placeholder="資産名" class="asset-name" value="${name}">
+          <input type="number" placeholder="現在の資産額" class="asset-current" min="0" value="${currentAmount}">
+          <input type="number" placeholder="元の基準資産額" class="asset-base" min="0" value="${baseAmount}">
+        `;
+        assetContainer.appendChild(div);
+      }
+
+      function saveAssets() {
+        let assetNames = document.querySelectorAll(".asset-name");
+        let assetCurrents = document.querySelectorAll(".asset-current");
+        let assetBases = document.querySelectorAll(".asset-base");
+        let assets = [];
+
+        assetNames.forEach((input, index) => {
+          assets.push({ 
+            name: input.value, 
+            currentAmount: assetCurrents[index].value, 
+            baseAmount: assetBases[index].value 
+          });
+        });
+
+        localStorage.setItem("savedAssets", JSON.stringify(assets));
+        alert("資産情報を保存しました。");
+      }
+
+      function loadAssets() {
+        let assets = JSON.parse(localStorage.getItem("savedAssets")) || [];
+        document.getElementById("assets").innerHTML = "";
+        assets.forEach((asset) => addAsset(asset.name, asset.currentAmount, asset.baseAmount));
+      }
+
+      function calculateWithdrawals() {
+        let assetNames = document.querySelectorAll(".asset-name");
+        let assetCurrents = document.querySelectorAll(".asset-current");
+        let assetBases = document.querySelectorAll(".asset-base");
+        let month = parseInt(document.getElementById("month").value);
+        let result1Text = "";
+        let result2Text = "";
+
+        assetNames.forEach((input, index) => {
+          let name = input.value || `資産${index + 1}`;
+          let currentAmount = parseFloat(assetCurrents[index].value) || 0;
+          let baseAmount = parseFloat(assetBases[index].value) || 0;
+          let withdrawal1 = (currentAmount - baseAmount) / 4;
+          let divisor = month === 3 ? 4 : month === 6 ? 3 : month === 9 ? 2 : 1;
+          let withdrawal2 = (currentAmount - baseAmount) / divisor;
+          withdrawal1 = withdrawal1 > 0 ? withdrawal1 : 0;
+          withdrawal2 = withdrawal2 > 0 ? withdrawal2 : 0;
+
+          result1Text += `${name}: 四半期取り崩し額 ${withdrawal1.toFixed(2)} 円\n`;
+          result2Text += `${name}: 月ごと変動あり取り崩し額 ${withdrawal2.toFixed(2)} 円 (選択月: ${month}月)\n`;
+        });
+
+        document.getElementById("result1").innerText = result1Text;
+        document.getElementById("result2").innerText = result2Text;
+      }
+    </script>
+  </head>
+  <body>
+    <h1>資産取り崩しシミュレーション</h1>
+
+    <div class="container">
+      <h2>【使い方】</h2>
+      <p>１：資産を追加を押してください。<br>
+         ２：「資産名」にご自身の投資信託やETFの名前を入力してください。<br>
+         ３：「現在の資産額」に、あなたが保有するその投資信託またはETFの現在の資産額を入力してください。<br>
+         ４：「元の基準資産額」は、基準として決めた額を入力してください。<br>
+         ５：「保存」を押すと、データが保存でき、「読み込み」を押すと保存したデータを呼び出せます。</p>
+    </div>
+
+    <div class="container">
+      <h2>資産の設定</h2>
+      <div id="assets"></div>
+      <button onclick="addAsset()">資産を追加</button>
+      <button onclick="saveAssets()">保存</button>
+      <button onclick="loadAssets()">読み込み</button>
+    </div>
+
+    <div class="container">
+      <h2>シミュレーション結果</h2>
+      <div class="input-group">
+        <label for="month">月を選択:</label>
+        <select id="month">
+          <option value="3">3月</option>
+          <option value="6">6月</option>
+          <option value="9">9月</option>
+          <option value="12">12月</option>
+        </select>
+      </div>
+      <button onclick="calculateWithdrawals()">計算する</button>
+      <h3>シミュレーション①: 四半期ごとの取り崩し</h3>
+      <p id="result1"></p>
+      <h3>シミュレーション②: 月ごと変動ありの取り崩し</h3>
+      <p id="result2"></p>
+    </div>
+
+    <div class="container">
+      <h2>【取り崩しシミュレーションの概要】</h2>
+      <p>四半期ごとの取り崩しは、「基準となる資産から増えた部分を四半期ごとに単純計算で1/4ずつ取り崩す手法」です。<br>
+         月ごとの変動ありの取り崩しは、「基準となる資産から増えた部分を3月は1/4、6月は1/3、9月は1/2、12月は1/1で取り崩す手法」です。</p>
+    </div>
+  </body>
+</html>
+
