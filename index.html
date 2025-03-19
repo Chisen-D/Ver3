@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>資産取り崩しシミュレーション</title>
-    <style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+　　<style>
       body {
         font-family: Arial, sans-serif;
         text-align: center;
@@ -40,8 +41,13 @@
       .asset-group input {
         flex: 1;
       }
+　　　canvas {
+        max-width: 100%;
+        margin-top: 20px;
+      }
     </style>
-    <script defer>
+　　<script defer>
+　　let chart;
       function addAsset(name = "", currentAmount = "", baseAmount = "") {
         let assetContainer = document.getElementById("assets");
         let div = document.createElement("div");
@@ -78,6 +84,38 @@
         assets.forEach((asset) => addAsset(asset.name, asset.currentAmount, asset.baseAmount));
       }
 
+      function updateChart() {
+        let assetNames = document.querySelectorAll(".asset-name");
+        let assetCurrents = document.querySelectorAll(".asset-current");
+        let labels = [];
+        let data = [];
+
+        assetNames.forEach((input, index) => {
+          let name = input.value || `資産${index + 1}`;
+          let amount = parseFloat(assetCurrents[index].value) || 0;
+          if (amount > 0) {
+            labels.push(name);
+            data.push(amount);
+          }
+        });
+
+        if (chart) {
+          chart.destroy();
+        }
+
+        let ctx = document.getElementById("assetChart").getContext("2d");
+        chart = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              backgroundColor: ["red", "blue", "green", "yellow", "purple", "orange"],
+            }],
+          },
+        });
+      }
+
       function calculateWithdrawals() {
         let assetNames = document.querySelectorAll(".asset-name");
         let assetCurrents = document.querySelectorAll(".asset-current");
@@ -103,8 +141,8 @@
         document.getElementById("result1").innerText = result1Text;
         document.getElementById("result2").innerText = result2Text;
       }
-
-     function openStockSearch() {
+    
+      function openStockSearch() {
         window.open('https://finance.yahoo.co.jp/', '_blank');
       }
     </script>
@@ -115,8 +153,8 @@
     <div class="container">
       <h2>【使い方】</h2>
       <p>１：資産を追加を押してください。<br>
-         ２：「資産名」にご自身の投資信託やETFの名前を入力してください。（例：決済施行日のあなたの保有する投信の保有額が1200万円であれば、1200万と入力する）<br>
-         ３：「現在の資産額」に、あなたが保有するその投資信託またはETFの現在の資産額を入力してください。<br>
+         ２：「資産名」にご自身が保有する投資信託やETFの名前を入力してください。<br>
+         ３：「現在の資産額」に、あなたが保有するその投資信託またはETFの現在の資産額を入力してください。（例：決済施行日のあなたの保有する投信の保有額が1200万円であれば、1200万と入力する）<br>
          ４：「元の基準資産額」は、基準として決めた額を入力してください。（例：あなたの投信が1000万を下回ってほしくないのであれば、1000万と入力してください）<br>
          ５：「保存」を押すと、データが保存でき、「読み込み」を押すと保存したデータを呼び出せます。</p>
     </div>
@@ -127,6 +165,12 @@
       <button onclick="addAsset()">資産を追加</button>
       <button onclick="saveAssets()">保存</button>
       <button onclick="loadAssets()">読み込み</button>
+      <button onclick="updateChart()">グラフを更新</button>
+    </div>
+
+　　<div class="container">
+      <h2>資産の割合</h2>
+      <canvas id="assetChart"></canvas>
     </div>
 
     <div class="container">
@@ -143,7 +187,7 @@
       <button onclick="calculateWithdrawals()">計算する</button>
       <h3>シミュレーション①: 四半期ごとの取り崩し</h3>
       <p id="result1"></p>
-      <h3>シミュレーション②: 月ごと変動ありの取り崩し</h3>
+      <h3>シミュレーション②: 月ごと変動ありの四半期取り崩し</h3>
       <p id="result2"></p>
     </div>
 
@@ -159,4 +203,3 @@
     </div>
   </body>
 </html>
-
