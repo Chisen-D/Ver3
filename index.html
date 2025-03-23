@@ -136,15 +136,39 @@
 
           result1Text += `${name}: 四半期取り崩し額 ${withdrawal1.toFixed(2)} 円\n`;
           result2Text += `${name}: 月ごと変動あり取り崩し額 ${withdrawal2.toFixed(2)} 円 (選択月: ${month}月)\n`;
+          let percentResult1Text = "";
+let percentResult2Text = "";
+
+assetNames.forEach((input, index) => {
+  let name = input.value || `資産${index + 1}`;
+  let currentAmount = parseFloat(assetCurrents[index].value) || 0;
+  let baseAmount = parseFloat(assetBases[index].value) || 0;
+  let withdrawal1 = (currentAmount - baseAmount) / 4;
+  let divisor = month === 3 ? 4 : month === 6 ? 3 : month === 9 ? 2 : 1;
+  let withdrawal2 = (currentAmount - baseAmount) / divisor;
+
+  withdrawal1 = withdrawal1 > 0 ? withdrawal1 : 0;
+  withdrawal2 = withdrawal2 > 0 ? withdrawal2 : 0;
+
+  let percent1 = baseAmount > 0 ? (withdrawal1 / baseAmount / 3) * 100 : 0;
+  let percent2 = baseAmount > 0 ? (withdrawal2 / baseAmount / 3) * 100 : 0;
+
+  percentResult1Text += `${name}: 年間取り崩し割合（シミュ①）: ${percent1.toFixed(2)}%／回\n`;
+  percentResult2Text += `${name}: 年間取り崩し割合（シミュ②）: ${percent2.toFixed(2)}%／回\n`;
+});
+
+document.getElementById("percentResult1").innerText = percentResult1Text;
+document.getElementById("percentResult2").innerText = percentResult2Text;
         });
 
         document.getElementById("result1").innerText = result1Text;
         document.getElementById("result2").innerText = result2Text;
       }
-    
+       
       function openStockSearch() {
         window.open('https://finance.yahoo.co.jp/', '_blank');
       }
+     
     </script>
   </head>
   <body>
@@ -189,6 +213,12 @@
       <p id="result1"></p>
       <h3>シミュレーション②: 月ごと変動ありの四半期取り崩し</h3>
       <p id="result2"></p>
+
+     <h3>シミュレーション①: 取り崩し割合（基準資産比）</h3>
+<p id="percentResult1"></p>
+<h3>シミュレーション②: 取り崩し割合（基準資産比）</h3>
+<p id="percentResult2"></p>
+
     </div>
 
     <div class="container">
